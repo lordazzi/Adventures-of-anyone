@@ -1,0 +1,186 @@
+<!DOCTYPE>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		
+		<style>
+			body {
+				color: #FFF;
+				font-family: arial;
+				font-weight: bolder;
+				background: #130e1e; /* Old browsers */
+				background: -moz-linear-gradient(top, #130e1e 0%, #30025e 100%); /* FF3.6+ */
+				background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#130e1e), color-stop(100%,#30025e)); /* Chrome,Safari4+ */
+				background: -webkit-linear-gradient(top, #130e1e 0%,#30025e 100%); /* Chrome10+,Safari5.1+ */
+				background: -o-linear-gradient(top, #130e1e 0%,#30025e 100%); /* Opera 11.10+ */
+				background: -ms-linear-gradient(top, #130e1e 0%,#30025e 100%); /* IE10+ */
+				background: linear-gradient(to bottom, #130e1e 0%,#30025e 100%); /* W3C */
+				filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#130e1e', endColorstr='#30025e',GradientType=0 ); /* IE6-9 */
+				-moz-user-select: none;
+				-webkit-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+				cursor: default;
+				margin: 2% 0 0 1%;
+			}
+			
+			.button {
+				background-color: #4B7DD2;
+				border-top: 1px solid #8AADE9;
+				border-left: 1px solid #8AADE9;
+				border-right: 1px solid #193970;
+				border-bottom: 1px solid #193970;
+				margin: 2%;
+				display:-ms-flexbox;
+				-ms-flex-pack:center;
+				-ms-flex-align:center;
+				display:-moz-box;
+				-moz-box-pack:center;
+				-moz-box-align:center;
+				display:-webkit-box;
+				-webkit-box-pack:center;
+				-webkit-box-align:center;
+				display:box;
+				box-pack:center;
+				box-align:center;
+				text-shadow: 1px 1px 5px #193970;
+			}
+			
+			.button:active {
+				background-color: #355B9C;
+			}
+			
+			.action {
+				height: 44%;
+			}
+			
+			.line {
+				height: 26%;
+			}
+			
+			#linona {
+				height: 34%;
+			}
+			
+			.sides {
+				height: 80%;
+				width: 44%;
+				float: left;
+				margin-top: 4%;
+			}
+			
+			#movements, #actions {
+				display: inline-block;
+				width: 49%;
+				vertical-align: top;
+			}
+			
+			#action-1 {
+				background-color: #39AC0D;
+				border-top: 1px solid #71D24B;
+				border-left: 1px solid #71D24B;
+				border-right: 1px solid #29720C;
+				border-bottom: 1px solid #29720C;
+				border-radius: 15% 15% 0 0;
+			}
+			
+			#action-1:active {
+				background-color: #28700C;
+			}
+			
+			#action-2 {
+				background-color: #C6141C;
+				border-top: 1px solid #D82931;
+				border-left: 1px solid #D82931;
+				border-right: 1px solid #9C1319;
+				border-bottom: 1px solid #9C1319;
+				border-radius: 0 0 15% 15%;
+			}
+			
+			#action-2:active {
+				background-color: #8F1117;
+			}
+			
+			#to-up {
+				border-radius: 15% 15% 0 0;
+			}
+			
+			#to-down {
+				border-radius: 0 0 15% 15%;
+			}
+		</style>
+		
+		<script src="http://192.168.0.101:2007/socket.io/socket.io.js"></script>
+		<script>
+			var io;
+			if (io) {
+				var socket = io.connect('192.168.80.1:2007');
+				window.onload = function(){
+					document.getElementById("to-up").addEventListener("mousedown", function(){
+						socket.emit("keydown", { key: "to-up" });
+					}, false);
+					
+					document.getElementById("to-down").addEventListener("mousedown", function(){
+						socket.emit("keydown", { key: "to-down" });
+					}, false);
+					
+					document.getElementById("to-left").addEventListener("mousedown", function(){
+						socket.emit("keydown", { key: "to-left" });
+					}, false);
+					
+					document.getElementById("to-right").addEventListener("mousedown", function(){
+						socket.emit("keydown", { key: "to-right" });
+					}, false);
+					
+					document.getElementById("action-1").addEventListener("mousedown", function(){
+						socket.emit("keydown", { key: "action-1" });
+					}, false);
+					
+					document.getElementById("action-2").addEventListener("mousedown", function(){
+						socket.emit("keydown", { key: "action-2" });
+					}, false);
+					
+					document.getElementById("to-up").addEventListener("mouseup", function(){
+						socket.emit("keyup", { key: "to-up" });
+					}, false);
+					
+					document.getElementById("to-down").addEventListener("mouseup", function(){
+						socket.emit("keyup", { key: "to-down" });
+					}, false);
+					
+					document.getElementById("to-left").addEventListener("mouseup", function(){
+						socket.emit("keyup", { key: "to-left" });
+					}, false);
+					
+					document.getElementById("to-right").addEventListener("mouseup", function(){
+						socket.emit("keyup", { key: "to-right" });
+					}, false);
+					
+					document.getElementById("action-1").addEventListener("mouseup", function(){
+						socket.emit("keyup", { key: "action-1" });
+					}, false);
+					
+					document.getElementById("action-2").addEventListener("mouseup", function(){
+						socket.emit("keyup", { key: "action-2" });
+					}, false);
+				}
+			} else {
+				console.error("Can't connect");
+			}
+		</script>
+	</head>
+	<body>
+		<div id="movements">
+			<div class="line button" id="to-up">UP</div>
+			<div id="linona">
+				<div class="button sides" id="to-left">LF</div>
+				<div class="button sides" id="to-right">RG</div>
+			</div>
+			<div class="line button" id="to-down">DW</div>
+		</div>
+		<div id="actions">
+			<div class="button action" id="action-1"></div>
+			<div class="button action" id="action-2"></div>
+		</div>
+	</body>
+</html>

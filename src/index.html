@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+
+		<script src="http://192.168.80.1:2007/socket.io/socket.io.js"></script>
+		<script src="adventures of anyone.js"></script>
+		<script>
+			var game;
+			window.onload = (function(){
+				game = new Game({
+					canvas: "game",
+					color: "#1B4CE0",
+					heroForm: "basic",
+					helperForm: "basic",
+					socket: "192.168.80.1:2007"
+				});
+				
+				game.addObject({
+					name: "tile_block",
+					images: "objects/tile_block.png",
+					nature: "block"
+				});
+				
+				game.addObject({
+					name: "coin",
+					images: ["coin/01.png", "coin/02.png", "coin/03.png", "coin/02.png"],
+					nature: "block"
+				});
+				
+				game.addObject({
+					name: "megaman",
+					images: "Megaman.png",
+					nature: "block"
+				});
+				
+				game.addObject({
+					name: "monster",
+					images: {
+						base: ["monster/01.png", "monster/02.png"],
+						killed: "monster/died.png"
+					},
+					nature: "killer"
+				});
+				
+				game.addObject({
+					name: "tile",
+					images: "objects/tile.png",
+					nature: "block",
+					hitFrom: {
+						"down": "die"
+					}
+				});
+				
+				/*
+				game.addPower({
+					name: "shoot",
+					type: "indirect",
+					sprites: ["", "", ""]
+				});
+				
+				game.addPower({
+					name: "kick",
+					type: "direct",
+					sprites: ["", "", ""]
+				});*/
+				
+				game.addHeroForm({
+					name: "basic",
+					speed: 100,
+					height: 32,
+					width: 26,
+					images: {
+						base: {
+							left: "basic/left.png",                                                                                                                                                                                                                                                                                                                                                                              
+							right: "basic/right.png"
+						},
+						jumping: {
+							left: "basic/left-jump.png",
+							right: "basic/right-jump.png"
+						},
+						falling: {
+							left: "basic/left-falling.png",
+							right: "basic/right-falling.png"
+						},
+						walking: {
+							left: [
+								"basic/l-walk-01.png",
+								"basic/l-walk-02.png",
+								"basic/l-walk-03.png",
+								"basic/l-walk-02.png"
+							],
+							right: [
+								"basic/r-walk-01.png",
+								"basic/r-walk-02.png",
+								"basic/r-walk-03.png",
+								"basic/r-walk-02.png"
+							]
+						},
+						lowered: {
+							left: "basic/left.png",                                                                                                                                                                                                                                                                                                                                                                              
+							right: "basic/right.png"
+						},
+					},
+					powers: ["shoot", "kick"]
+				});
+				
+				game.setMap({
+					0: [{
+						type: "object",
+						name: "tile_block",
+						bottom: 0
+					}],
+					132: [{
+						type: "object",
+						name: "tile_block",
+						bottom: 0
+					}],
+					396: [{
+						type: "object",
+						name: "tile_block",
+						bottom: 0
+					}],
+					400: [{
+						type: "object",
+						name: "tile_block",
+						bottom: 400
+					}],
+					450: [{
+						type: "hero",
+						bottom: 150
+					}],
+					495: [{
+						type: "object",
+						name: "tile",
+						bottom: 102
+					}],
+					500: [{
+						type: "object",
+						name: "tile",
+						bottom: 250
+					}],
+					528: [{
+						type: "object",
+						name: "tile_block",
+						bottom: 0
+					}],
+					530: [{
+						type: "object",
+						name: "megaman",
+						bottom: 100
+					}],
+					580: [{
+						type: "object",
+						name: "coin",
+						bottom: 180
+					}],
+					600: [{
+						type: "object",
+						name: "tile",
+						top: 10
+					}],
+					660: [{
+						type: "object",
+						name: "tile_block",
+						bottom: 0
+					}],
+					665: [{
+						type: "object",
+						name: "tile_block",
+						top: 0
+					}],
+					792: [{
+						type: "object",
+						name: "tile_block",
+						bottom: 0
+					}]
+				});
+				
+				game.socketConnect(io);
+				game.localConnect();
+				game.runServer();
+				
+				var byid = (function(id){
+					return document.getElementById(id);
+				});
+				
+				byid("create-server").addEventListener("click", function(){
+					if (byid("id-game").value != "" && byid("id-game").value.match(/^[A-z0-9]+$/) != null) {
+						game.createServer(byid("id-game").value, byid("password").value, function(status){
+							byid("server-status").src = "system/"+status+".png";
+							if (status == "online") {
+								byid("id-game").disabled = true;
+								byid("password").disabled = true;
+							}
+						});
+					}
+				}, false);
+				
+				byid("access-server").addEventListener("click", function(){
+					if (byid("id-game").value != "" && byid("id-game").value.match(/^[A-z0-9]+$/) != null) {
+						game.joinServer(byid("id-game").value, byid("password").value, function(status){
+							byid("server-status").src = "system/"+status+".png";
+							if (status == "online") {
+								byid("id-game").disabled = true;
+								byid("password").disabled = true;
+							}
+						});
+					}
+				}, false);
+			});
+		</script>
+		
+		<style>
+			#game {
+				margin: 0 auto;
+				display: block;
+				border: 1px solid #000;
+			}
+			
+			#lan {
+				width: 720px;
+				margin: 0 auto;
+				display: block;
+				font-family: arial;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="game" width="720" height="540"></canvas>
+		<div id="lan">
+			<fieldset>
+				<legend>CRIAR SERVER / ACESSAR JOGO EXISTENTE</legend>
+				<label for="id-game">ID:</label><input id="id-game" type="text" />
+				<label for="password">SENHA:</label><input id="password" type="password" />
+				<button id="create-server">CRIAR SERVER</button>
+				<button id="access-server">ACESSAR SERVER</button>
+				<img id="server-status" src="system/offline.png" style="margin:-3px 3px;" />
+			</fieldset>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,364 @@
+<!doctype html>
+<html>
+	<head>
+		<script>
+			var Exception = (function(error, arg){
+				var self = this;
+				
+				self.toString = (function(){	
+					if (typeof arg == "object" && arg instanceof Array) {
+						var end = arg.splice(arg.length - 1, 1);
+						arg = arg.join(", ");
+						if (arg != "") {
+							arg += " and "+end[0];
+						} else {
+							arg = end[0];
+						}
+					}
+				
+					if (arg == null) {
+						return "Exception: "+error;
+					} else if (error == null || error == "") {
+						return "Exception: missing argument '"+arg+"'";
+					} else {
+						return "Exception: missing argument '"+arg+"', "+error;
+					}
+				});
+			});
+		
+			var Environment = (function(args){
+				var self = this;
+				var rectangles = [];
+				
+				self.addRectangle = (function(args){
+					if (args == null) { throw new Exception("can't create rectangle widthout id", "args.id"); return false; }
+					if (args.id == null) { throw new Exception("can't create rectangle widthout id", "args.id"); return false; }
+					
+					rectangles[args.id] = new Rectangle(args);
+					return rectangles[args.id];
+				});
+				
+				self.doCollides = (function(rectangle){
+					var rectangle = toRectangle(rectangle);
+					var collisions = [];
+					for (var i in rectangles) {
+						if (rectangles[i].id != rectangle.id && rectangles[i].rectangleIsCrossed(rectangle)) {
+							collisions[collisions.length] =  rectangles[i];
+						}
+					}
+					
+					return collisions;
+				});
+				
+				self.willICollide = (function(rectangle, to, speed){
+					var rectangle = toRectangle(rectangle);
+					var area = {
+						x: rectangle.getArea().x,
+						y: rectangle.getArea().y,
+						width: rectangle.getArea().width,
+						height: rectangle.getArea().height
+					};
+					
+					switch (to) {
+						case "up":	
+							area.y -= speed;
+							break;
+							
+						case "down":
+							area.y += speed;
+							break;
+							
+						case "left":
+							area.x -= speed;
+							break;
+							
+						case "right":
+							area.x += speed;
+							break;
+					}
+					
+					var antigos = self.doCollides(rectangle);
+					console.info(antigos);
+					var futuro = self.doCollides({
+						id: rectangle.id,
+						x: area.x,
+						y: area.y,
+						width: area.width,
+						height: area.height
+					});
+					
+					var indices = []; // vamos ver quais eram os retângulos que já estavam colidindo antes
+					var retangulos = [];
+					for (var z in antigos) {
+						indices[indices.length] = antigos[z].id;
+					}
+					
+					var collision = 0;
+					for (var z in futuro) { // verificando novas colisões
+						if (indices.indexOf(futuro[z].id) == -1) {
+							retangulos[retangulos.length] = futuro[z];
+							
+							switch(to) {
+								case "up":
+									var essacolisao = rectangle.getArea().y - (futuro[z].getArea().y + futuro[z].getArea().height);
+									break;
+									
+								case "down":
+									var essacolisao = futuro[z].getArea().y - (rectangle.getArea().y + rectangle.getArea().height);
+									break;
+									
+								case "left":
+									var essacolisao = rectangle.getArea().x - (futuro[z].getArea().x + futuro[z].getArea().height);
+									break;
+									
+								case "right":
+									var essacolisao = futuro[z].getArea().x - (rectangle.getArea().x + rectangle.getArea().height);
+									break;
+							}
+							
+							if (essacolisao > collision) {
+								collision = essacolisao;
+							}
+						}
+					}
+					
+					return {
+						rectangles: retangulos,
+						collision: (retangulos.length!=0)?collision:false
+					};
+				});
+				
+				self.getRectangle = (function(id){
+					return rectangles[id];
+				});
+				
+				self.getRectangles = (function(){
+					return rectangles;
+				});
+				
+				var toRectangle = (function(args){
+					if (typeof args == "string" && rectangles[args] instanceof Rectangle) {
+						return rectangles[args];
+					} else if (args instanceof Rectangle) {
+						return args;
+					} else if (typeof args == "object" && args.x != null && args.y != null && args.height != null && args.width != null) {
+						return new Rectangle(args);
+					} else {
+						throw new Exception("can't detect collision: invalid argument given");
+						return false;
+					}
+				});
+				
+				var Rectangle = (function(args){
+					//	defaults
+					if (args == null) { throw new Exception("can't create rectangle without any argument", "args"); return false; }
+					if (args.x == null) { throw new Exception("can't create rectangle without x position", "args.x"); return false; }
+					if (args.y == null) { throw new Exception("can't create rectangle without y position", "args.y"); return false; }
+					if (args.width == null) { throw new Exception("can't create rectangle without width", "args.width"); return false; }
+					if (args.height == null) { throw new Exception("can't create rectangle without height", "args.height"); return false; }
+					
+					var self = this;
+					var area;
+					
+					var __construct = (function(args){
+						area = {
+							x: parseFloat(args.x),
+							y: parseFloat(args.y),
+							width: parseFloat(args.width),
+							height: parseFloat(args.height)
+						};
+						
+						if (args.id) {
+							self.id = args.id;
+						}
+						
+						if (args.attributes != null) {
+							self.attributes = args.attributes;
+						} else {
+							args.attributes = {};
+						}
+					});
+					
+					self.pointIsInside = (function(point){
+						if (area.x < point.x && area.y < point.y && point.x < (area.x + area.width) && point.y < (area.y + area.height)) {
+							return true;
+						} else {
+							return false;
+						}
+					});
+					
+					self.rectangleIsCrossed = (function(rectangle){
+						var foreign = toRectangle(rectangle).getArea();
+						if (self.pointIsInside({ x: foreign.x, y: foreign.y }) || self.pointIsInside({ x: (foreign.x + foreign.width), y: foreign.y }) || self.pointIsInside({ x: foreign.x, y: (foreign.y + foreign.height) }) || self.pointIsInside({ x: (foreign.x + foreign.width), y: (foreign.y + foreign.height) })) {
+							return true;
+						} else if (rectangle.pointIsInside({ x: area.x, y: area.y }) || rectangle.pointIsInside({ x: (area.x + area.width), y: area.y }) || rectangle.pointIsInside({ x: area.x, y: (area.y + area.height) }) || rectangle.pointIsInside({ x: (area.x + area.width), y: (area.y + area.height) })) {
+							return true;
+						} else if (area.y <= foreign.y && (area.y + area.height) <= (foreign.y + foreign.height) && area.x >= foreign.x && (area.x + area.width) <= (foreign.x + foreign.width)) {
+							return true;
+						} else if (area.x <= foreign.x && (area.x + area.width) <= (foreign.x + foreign.width) && area.y >= foreign.y && (area.y + area.height) <= (foreign.y + foreign.height)) {
+							return true;
+						} else {
+							return false;
+						}
+					});
+					
+					self.getArea = (function(){
+						return area;
+					});
+					
+					self.move = (function(tos, qtdd){
+						if (typeof tos == "string") {
+							move(tos, qtdd);
+						} else if (tos instanceof Array) {
+							for (var i in tos) {
+								move(tos[i], qtdd);
+							}
+						} else {
+							throw new Exception("invalid argument 'args.tos' given");
+						}
+					});
+					
+					var move = (function(to, qtdd){
+						if (qtdd == null) { qtdd = 1; }
+						
+						switch(to) {
+							case "right":
+								area.x += qtdd;
+								break;
+							case "up":
+								area.y -= qtdd;
+								break;
+							case "left":
+								area.x -= qtdd;
+								break;
+							case "down":
+								area.y += qtdd;
+								break;
+						}
+					});
+					
+					__construct(args);
+				});
+			});
+
+		</script>
+		<script src="jquery.js"></script>
+		<script>
+			$(function(){
+				$(document).keydown(function(e){
+					var env = new Environment();
+					env.addRectangle({
+						id: "um",
+						x: $("#a").offset().left,
+						y: $("#a").offset().top,
+						width: $("#a").outerWidth(),
+						height: $("#a").outerHeight()
+					});
+					
+					env.addRectangle({
+						id: "dois",
+						x: $("#e").offset().left,
+						y: $("#e").offset().top,
+						width: $("#e").outerWidth(),
+						height: $("#e").outerHeight()
+					});
+					
+					env.addRectangle({
+						id: "tres",
+						x: $("#f").offset().left,
+						y: $("#f").offset().top,
+						width: $("#f").outerWidth(),
+						height: $("#f").outerHeight()
+					});
+					
+					env.addRectangle({
+						id: "quarta",
+						x: $("#g").offset().left,
+						y: $("#g").offset().top,
+						width: $("#g").outerWidth(),
+						height: $("#g").outerHeight()
+					});
+					
+					env.addRectangle({
+						id: "quinto",
+						x: $("#h").offset().left,
+						y: $("#h").offset().top,
+						width: $("#h").outerWidth(),
+						height: $("#h").outerHeight()
+					});
+					
+					var c;
+					switch (e.keyCode) {
+						case 38: // /\
+							c = env.willICollide({
+								id: "um",
+								x: $("#a").offset().left,
+								y: $("#a").offset().top,
+								width: $("#a").outerWidth(),
+								height: $("#a").outerHeight()
+							}, "up", 25);
+							
+							var avanco = parseFloat($("#a").css("top")) - ((c.collision !== false)?(c.collision):(25));
+							$("#a").css("top", avanco);
+							break;
+						case 39: // ->
+							c = env.willICollide({
+								id: "um",
+								x: $("#a").offset().left,
+								y: $("#a").offset().top,
+								width: $("#a").outerWidth(),
+								height: $("#a").outerHeight()
+							}, "right", 25);
+
+							var avanco = parseFloat($("#a").css("left")) + ((c.collision !== false)?(c.collision):(25));
+							$("#a").css("left", avanco);
+							break;
+						case 37: // <-
+							c = env.willICollide({
+								id: "um",
+								x: $("#a").offset().left,
+								y: $("#a").offset().top,
+								width: $("#a").outerWidth(),
+								height: $("#a").outerHeight()
+							}, "left", 25);
+
+							var avanco = parseFloat($("#a").css("left")) - ((c.collision !== false)?(c.collision):(25));
+							$("#a").css("left", avanco);
+							break;
+						case 40: // \/
+							c = env.willICollide({
+								id: "um",
+								x: $("#a").offset().left,
+								y: $("#a").offset().top,
+								width: $("#a").outerWidth(),
+								height: $("#a").outerHeight()
+							}, "down", 25);
+
+							var avanco = parseFloat($("#a").css("top")) + ((c.collision !== false)?(c.collision):(25));
+							$("#a").css("top", avanco);
+							break;
+					}
+					console.info(c);
+				});
+			});
+		</script>
+
+		<style>
+			div {
+				border: 1PX solid #000;
+				width: 100px;
+				height: 100px;
+				position: absolute;
+				top: 150px;
+				left: 150px;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="a" style="width:50px;height:50px;top:15px;left:15px"></div>
+		<div id="e"></div>
+		<div id="f" style="top:350px;left:350px"></div>
+		<div id="g" style="top:200px;left:600px"></div>
+		<div id="h" style="top:90px;left:400px"></div>
+	</body>
+</html>
